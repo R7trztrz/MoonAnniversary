@@ -1,0 +1,6 @@
+/dist/
+/.cache/
+/.idea/
+/moon
+/moon.exe
+*.test
