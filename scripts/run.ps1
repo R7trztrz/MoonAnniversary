@@ -6,18 +6,13 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$release = Invoke-RestMethod "https://api.github.com/repos/$Repository/releases/latest"
-$asset = $release.assets | Where-Object name -eq "moon-windows-amd64.exe" | Select-Object -First 1
-$checksums = $release.assets | Where-Object name -eq "SHA256SUMS" | Select-Object -First 1
-if (-not $asset -or -not $checksums) {
-    throw "The latest release is missing the Windows executable or its checksums."
-}
-
-$destination = Join-Path ([System.IO.Path]::GetTempPath()) "moon-$($release.tag_name).exe"
+$releaseBaseUrl = "https://github.com/$Repository/releases/latest/download"
+$temporaryName = "moon-$([Guid]::NewGuid().ToString('N')).exe"
+$destination = Join-Path ([System.IO.Path]::GetTempPath()) $temporaryName
 $checksumFile = "$destination.sha256"
 try {
-    Invoke-WebRequest $asset.browser_download_url -OutFile $destination
-    Invoke-WebRequest $checksums.browser_download_url -OutFile $checksumFile
+    Invoke-WebRequest "$releaseBaseUrl/moon-windows-amd64.exe" -OutFile $destination
+    Invoke-WebRequest "$releaseBaseUrl/SHA256SUMS" -OutFile $checksumFile
     $checksumLine = Get-Content $checksumFile | Where-Object { $_ -match "moon-windows-amd64\.exe$" } | Select-Object -First 1
     if (-not $checksumLine) {
         throw "The checksum file does not list the Windows executable."
